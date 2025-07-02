@@ -43,13 +43,13 @@ class TONAPI(APIClient):
 
 When instantiating your client, you can configure:
 
-| Name          | Type | Description                                                                               | Default |
-|---------------|------|-------------------------------------------------------------------------------------------|---------|
-| `headers`     | dict | Default headers, e.g. Authorization tokens or Content-Type.                               | `{}`    |
-| `timeout`     | int  | Request timeout in seconds.                                                               | `10`    |
-| `rps`         | int  | Maximum requests per second (rate limiting). Controls throughput and prevents 429 errors. | `1`     |
-| `max_retries` | int  | Number of retries on 429 responses.                                                       | `3`     |
-| `debug`       | bool | Enable logging of requests and responses.                                                 | `False` |
+| Name          | Type | Description                                  | Default |
+|---------------|------|----------------------------------------------|---------|
+| `headers`     | dict | Default headers, e.g. Authorization tokens.  | `{}`    |
+| `timeout`     | int  | Request timeout in seconds.                  | `10`    |
+| `rps`         | int  | Maximum requests per second (rate limiting). | `1`     |
+| `max_retries` | int  | Number of retries on 429 responses.          | `3`     |
+| `debug`       | bool | Enable logging of requests and responses.    | `False` |
 
 ```python
 tonapi = TONAPI(
@@ -133,7 +133,6 @@ class TONAPI(APIClient):
         """
         Check API status.
         GET /status
-        Returns a dict since no response model is specified.
         """
         pass
 
