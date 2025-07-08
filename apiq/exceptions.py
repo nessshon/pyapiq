@@ -1,49 +1,41 @@
+__all__ = [
+    "APIQException",
+    "RateLimitExceeded",
+    "UnsupportedResponseType",
+]
+
+
 class APIQException(Exception):
     """
-    Base exception class for all APIQ-related errors.
+    Base exception for all APIQ-related errors.
+
+    All custom exceptions in the APIQ client library should inherit from this class.
     """
-    pass
 
 
 class RateLimitExceeded(APIQException):
     """
-    Raised when the request fails due to exceeding rate limits (HTTP 429).
+    Exception raised when a request exceeds the allowed rate limit (HTTP 429).
 
-    :param url: URL of the request that failed.
-    :param attempts: Number of attempts made before giving up.
+    :param url: The URL where the rate limit was exceeded.
+    :param attempts: The number of retry attempts performed.
     """
 
     def __init__(self, url: str, attempts: int):
-        super().__init__(f"Request to {url} failed after {attempts} attempts due to rate limiting (HTTP 429).")
+        super().__init__(
+            f"Request to {url} failed after {attempts} attempts due to rate limiting (HTTP 429)."
+        )
+        self.url = url
+        self.attempts = attempts
 
 
-class UnauthorizedError(APIQException):
+class UnsupportedResponseType(APIQException):
     """
-    Raised when the request is unauthorized (HTTP 401).
+    Exception raised when an unsupported response type is encountered.
 
-    :param url: URL of the unauthorized request.
-    """
-
-    def __init__(self, url: str):
-        super().__init__(f"Unauthorized (HTTP 401). Check your API key or permissions for {url}.")
-
-
-class HTTPClientResponseError(APIQException):
-    """
-    Raised when a non-OK HTTP response is received.
-
-    :param url: URL of the failed request.
-    :param status: HTTP status code returned.
-    :param message: Error message or parsed content from response.
+    :param response_type: The unsupported response type.
     """
 
-    def __init__(self, url: str, status: int, message: str):
-        super().__init__(f"HTTP {status} Error for {url}: {message}")
-
-
-__all__ = [
-    "APIQException",
-    "RateLimitExceeded",
-    "UnauthorizedError",
-    "HTTPClientResponseError",
-]
+    def __init__(self, response_type: str):
+        super().__init__(f"Unsupported response type from {response_type}")
+        self.response_type = response_type

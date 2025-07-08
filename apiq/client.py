@@ -1,202 +1,162 @@
 from __future__ import annotations
 
-import asyncio
-import json
-import random
-from abc import ABC, abstractmethod
-from typing import Any, Dict, Optional
+import typing as t
 
-import aiohttp
-from aiolimiter import AsyncLimiter
+from aiohttp import ClientResponse
 
-from .exceptions import (
-    UnauthorizedError,
-    HTTPClientResponseError,
-    RateLimitExceeded,
-)
-from .logger import (
-    setup_logger,
-    log_request,
-    log_response,
-)
+from .session import RateLimitedSession
+
+__all__ = ["APIQClient"]
 
 
-class APIClient(ABC):
+class APIQClient:
     """
-    Base abstract asynchronous API client with built-in rate limiting, retries,
-    structured logging, and automatic JSON parsing.
+    Core class for asynchronous API clients with rate limiting, retries, and context management.
 
-    Inherit from this class to define your own API clients by implementing
-    the `url` and `version` properties.
+    Provides base logic for:
+        - Asynchronous context management.
+        - Rate limiting and retry on errors.
+        - Session lifecycle and safe closing.
+        - URL building and versioning.
+        - Access to session and client parameters.
+
+    :cvar base_url: Base URL for all API requests (required, must start with "http" or "https").
+    :cvar version: Optional API version string appended to each request.
+    :cvar headers: Optional HTTP headers used for every request.
+    :cvar timeout: Optional request timeout in seconds for all requests.
+    :cvar cookies: Optional cookies dict to send with every request.
+    :cvar rps: Requests per second rate limit.
+    :cvar retries: Maximum retry attempts for failed (429) requests.
+    :ivar _session: Internal RateLimitedSession (aiohttp-based).
+
+    :raises RuntimeError: If the client is not configured via the @apiclient decorator.
     """
 
-    def __init__(
+    base_url: str
+    version: t.Optional[str] = None
+
+    headers: t.Optional[t.Dict[str, str]] = None
+    timeout: t.Optional[float] = None
+    cookies: t.Optional[t.Dict[str, str]] = None
+
+    rps: int
+    retries: int
+
+    def __init__(self, **kwargs: t.Any) -> None:
+        if not getattr(self, "base_url", None):
+            raise RuntimeError(
+                f"{self.__class__.__name__} is not configured! "
+                f"Did you forget to use the @apiclient decorator? "
+                f"Define @apiclient(base_url=...) above your client class."
+            )
+        for attr, val in kwargs.items():
+            setattr(self, attr, val)
+        self._session: t.Optional[RateLimitedSession] = None
+
+    async def __aenter__(self) -> APIQClient:
+        """
+        Initialize and return the client for async context management.
+
+        :return: The initialized APIQClient instance.
+        """
+        await self.ensure_session()
+        return self
+
+    async def __aexit__(
             self,
-            headers: Optional[Dict[str, str]] = None,
-            timeout: int = 10,
-            rps: int = 1,
-            max_retries: int = 3,
-            debug: bool = False,
+            exc_type: t.Optional[type[BaseException]],
+            exc: t.Optional[BaseException],
+            tb: t.Optional[t.Any],
     ) -> None:
         """
-        Initialize the API client.
+        Finalize and clean up resources when exiting the async context.
 
-        :param headers: Optional default headers for all requests.
-        :param timeout: Total timeout per request in seconds.
-        :param rps: Requests per second rate limit.
-        :param max_retries: Maximum number of retries on failure or rate limiting.
-        :param debug: If True, enables detailed debug logging.
+        :param exc_type: Type of exception, if any.
+        :param exc: Exception instance, if any.
+        :param tb: Traceback, if an exception occurred.
+        :return: None
         """
-        self._headers = headers or {}
-        self._timeout = timeout
-        self._rps = rps
-        self._max_retries = max_retries
-        self._debug = debug
-
-        self._limiter = AsyncLimiter(self._rps, 1)
-        self.logger = setup_logger(f"{__name__}.{self.__class__.__name__}", debug)
+        await self.close()
 
     @property
-    def api(self) -> APIClient:
+    def client(self) -> APIQClient:
         """
-        Returns self for interface consistency with APINamespace classes.
+        Reference to the client instance (self).
 
-        :return: Self instance.
+        :return: The current APIQClient instance.
         """
         return self
 
     @property
-    @abstractmethod
-    def url(self) -> str:
+    def session(self) -> RateLimitedSession:
         """
-        Base URL of the API. Must be implemented by subclasses.
+        Access the underlying RateLimitedSession.
 
-        :return: API base URL string.
+        :return: The RateLimitedSession instance.
+        :raises RuntimeError: If the session is not initialized.
         """
-        pass
+        if self._session is None:
+            raise RuntimeError(
+                "Session is not initialized. "
+                "Use 'async with', or call 'await init_session()' before making requests."
+            )
+        return self._session
 
-    @property
-    @abstractmethod
-    def version(self) -> str:
+    def consume_url(self, *parts: str) -> str:
         """
-        API version path segment. Must be implemented by subclasses.
+        Build a full API URL from base URL, version, and additional path segments.
 
-        :return: API version string.
+        :param parts: Additional URL path segments.
+        :return: The full constructed API URL.
         """
-        pass
-
-    def build_url(self, *parts: str) -> str:
-        """
-        Safely joins base_url, version, and additional path parts into a full URL.
-        Removes duplicate slashes and trailing slashes.
-
-        :param parts: Additional path segments to append.
-        :return: Fully constructed URL.
-        """
-        segments = [self.url.rstrip("/")]
-
+        segments = [self.base_url.rstrip("/")]
         if self.version:
             segments.append(str(self.version).strip("/"))
         segments += [str(p).strip("/") for p in parts if p]
-
         return "/".join(segments)
 
-    @staticmethod
-    async def _parse_response(response: aiohttp.ClientResponse) -> Any:
+    async def ensure_session(self) -> None:
         """
-        Parse and return the HTTP response content as JSON if possible.
+        Initialize the internal RateLimitedSession if not already present.
 
-        :param response: aiohttp ClientResponse object.
-        :return: Parsed JSON object or raw text if not JSON.
+        :return: None
         """
-        content_type = response.headers.get("Content-Type", "")
-        raw_data = await response.read()
+        if self._session is None:
+            self._session = RateLimitedSession(
+                rps=self.rps,
+                retries=self.retries,
+            )
 
-        if "application/json" not in content_type:
-            return {"error": f"Unsupported response format. HTTP {response.status}", "content": raw_data.decode()}
-
-        try:
-            return json.loads(raw_data.decode())
-        except json.JSONDecodeError:
-            return raw_data.decode()
-
-    @staticmethod
-    async def _apply_retry_delay(
-            response: Optional[aiohttp.ClientResponse] = None,
-            default_delay: int = 1,
-    ) -> None:
+    async def request(self, method: str, url: str, **kwargs: t.Any) -> ClientResponse:
         """
-        Wait before retrying a request, based on Retry-After header or a default delay.
+        Perform an HTTP request with rate limiting and retry logic.
 
-        :param response: aiohttp ClientResponse object (optional).
-        :param default_delay: Default delay in seconds if Retry-After is absent or invalid.
+        :param method: HTTP method ("GET", "POST", etc).
+        :param url: Full URL for the request.
+        :param kwargs: Additional request parameters.
+        :return: aiohttp.ClientResponse object.
         """
-        retry_after = default_delay
-        if response and "Retry-After" in response.headers:
-            try:
-                retry_after = int(response.headers["Retry-After"])
-            except (ValueError, TypeError):
-                pass
+        await self.ensure_session()
+        return await self.session.request_with_retries(method, url, **kwargs)
 
-        await asyncio.sleep(retry_after + random.uniform(0.2, 0.5))
-
-    async def request(
-            self,
-            method: str,
-            path: str,
-            params: Optional[Dict[str, Any]] = None,
-            body: Optional[Dict[str, Any]] = None,
-            headers: Optional[Dict[str, str]] = None,
-    ) -> Any:
+    async def stream(self, method: str, url: str, **kwargs: t.Any) -> ClientResponse:
         """
-        Perform an HTTP request with retry logic, rate limiting, and automatic logging.
+        Perform an HTTP request and return a streamable response.
 
-        :param method: HTTP method (GET, POST, etc.).
-        :param path: API endpoint path or full URL.
-        :param params: Query parameters dictionary.
-        :param body: Request body dictionary (JSON).
-        :param headers: Optional additional headers.
-        :return: Parsed JSON response or raw text.
-        :raises UnauthorizedError: If response status is 401.
-        :raises HTTPClientResponseError: For other non-OK statuses.
-        :raises RateLimitExceeded: If all retries exhausted due to rate limiting.
+        :param method: HTTP method.
+        :param url: Full request URL.
+        :param kwargs: Additional request parameters.
+        :return: aiohttp.ClientResponse (streamable).
         """
-        merged_headers = {**self._headers, **(headers or {})}
-        url = path if path.startswith("http") else self.build_url(path)
-        timeout = aiohttp.ClientTimeout(total=self._timeout)
+        await self.ensure_session()
+        return await self.session.request(method, url, **kwargs)
 
-        if self._debug:
-            log_request(self.logger, method, url, merged_headers, params, body)
+    async def close(self) -> None:
+        """
+        Closes the session and releases all resources.
 
-        for attempt in range(self._max_retries + 1):
-            async with self._limiter:
-                try:
-                    async with aiohttp.ClientSession(headers=merged_headers, timeout=timeout) as session:
-                        async with session.request(
-                                method=method,
-                                url=url,
-                                params=params,
-                                json=body,
-                        ) as response:
-                            content = await self._parse_response(response)
-
-                            if self._debug:
-                                log_response(self.logger, response.status, content)
-
-                            if response.status == 429:
-                                await self._apply_retry_delay(response)
-                                continue
-                            if response.status == 401:
-                                raise UnauthorizedError(url)
-                            if not response.ok:
-                                raise HTTPClientResponseError(url, response.status, str(content))
-                            return content
-
-                except (aiohttp.ClientError, asyncio.TimeoutError) as e:
-                    self.logger.error(f"[APIQ ERROR] Exception during request: {e}")
-                    raise
-
-        raise RateLimitExceeded(url, self._max_retries + 1)
-
-
-__all__ = ["APIClient"]
+        :return: None
+        """
+        if self._session is not None:
+            await self._session.close()
+            self._session = None

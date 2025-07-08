@@ -1,19 +1,31 @@
-from .client import APIClient
-from .decorators import endpoint
-from .exceptions import (
-    APIQException,
-    RateLimitExceeded,
-    UnauthorizedError,
-    HTTPClientResponseError,
+from .client import APIQClient
+from .decorators import (
+    apiclient,
+    apinamespace,
+    endpoint,
 )
-from .namespace import APINamespace
+from .session import RateLimitedSession
+from .types import ResponseType
 
 __all__ = [
-    "APIClient",
+    "APIQClient",
+    "RateLimitedSession",
+    "ResponseType",
+    "apiclient",
+    "apinamespace",
     "endpoint",
-    "APIQException",
-    "RateLimitExceeded",
-    "UnauthorizedError",
-    "HTTPClientResponseError",
-    "APINamespace",
 ]
+
+"""
+APIQ Python Client
+
+Provides core building blocks for creating fully asynchronous, rate-limited,
+and strongly-typed API clients using decorators only — inheritance is optional.
+
+Main features:
+    - Simple client definition via @apiclient decorator.
+    - Strong endpoint typing and auto-parsing via @endpoint.
+    - Rate limiting, retries, and context management built-in.
+    - Optional logical grouping of endpoints via @apinamespace.
+
+"""
