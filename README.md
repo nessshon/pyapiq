@@ -1,15 +1,19 @@
 # 📦 APIQ
 
-**APIQ** is an elegant, fast, fully asynchronous Python framework for building API clients with minimal boilerplate. It
-provides structured endpoints via intuitive decorators, strict Pydantic models, and integrated rate limiting.
+**APIQ** is an elegant, fully asynchronous Python toolkit for building robust API clients with minimal code and maximal
+type safety.
+Define endpoints with simple decorators, leverage strict Pydantic models, and enjoy integrated rate limiting and
+retries—**no inheritance required**.
 
-[![PyPI](https://img.shields.io/pypi/v/apiq.svg?color=FFE873&labelColor=3776AB)](https://pypi.python.org/pypi/apiq)
-![Python Versions](https://img.shields.io/badge/Python-3.10%20--%203.12-black?color=FFE873&labelColor=3776AB)
+[![PyPI](https://img.shields.io/pypi/v/apiq.svg?color=FFE873\&labelColor=3776AB)](https://pypi.python.org/pypi/apiq)
+![Python Versions](https://img.shields.io/badge/Python-3.10%20--%203.12-black?color=FFE873\&labelColor=3776AB)
 [![License](https://img.shields.io/github/license/nessshon/apiq)](LICENSE)
 
 ![Downloads](https://pepy.tech/badge/apiq)
 ![Downloads](https://pepy.tech/badge/apiq/month)
 ![Downloads](https://pepy.tech/badge/apiq/week)
+
+---
 
 ## Installation
 
@@ -17,58 +21,19 @@ provides structured endpoints via intuitive decorators, strict Pydantic models, 
 pip install apiq
 ```
 
-## Usage
+---
 
-### Creating your API client
+## Quickstart
 
-To create your API client, **extend `APIClient`** and define:
+### 1. Define your models
 
-* `url`: Base URL of your API (**required**).
-* `version`: API version path segment (**required**, use `""` if absent).
+Use [Pydantic](https://docs.pydantic.dev/latest/) for type-safe request and response models:
 
 ```python
-import logging
 from typing import List
-
 from pydantic import BaseModel
-from apiq import APINamespace, endpoint, APIClient
 
 
-class TONAPI(APIClient):
-    url = "https://tonapi.io"
-    version = "v2"
-```
-
-### Initialization parameters
-
-When instantiating your client, you can configure:
-
-| Name          | Type | Description                                  | Default |
-|---------------|------|----------------------------------------------|---------|
-| `headers`     | dict | Default headers, e.g. Authorization tokens.  | `{}`    |
-| `timeout`     | int  | Request timeout in seconds.                  | `10`    |
-| `rps`         | int  | Maximum requests per second (rate limiting). | `1`     |
-| `max_retries` | int  | Number of retries on 429 responses.          | `3`     |
-| `debug`       | bool | Enable logging of requests and responses.    | `False` |
-
-```python
-tonapi = TONAPI(
-    headers={"Authorization": "Bearer YOUR_API_KEY"},
-    timeout=15,
-    rps=5,
-    max_retries=2,
-    debug=True
-)
-```
-
-### Defining models
-
-Use Pydantic models to define your request and response schemas.
-
-* POST request bodies can be provided as either Pydantic models or plain dicts, depending on your endpoint declaration.
-* If no response model is specified, the raw response will be returned as a dict.
-
-```python
 class BulkAccountsRequest(BaseModel):
     account_ids: List[str]
 
@@ -83,147 +48,145 @@ class BulkAccountsResponse(BaseModel):
     accounts: List[AccountInfoResponse]
 ```
 
-### Creating namespaces
+---
 
-Use `APINamespace` to group related endpoints logically.
+### 2. Define your client class
 
-```python
-class Accounts(APINamespace):
-    path = "accounts"
-
-    @endpoint("GET", path="{account_id}", model=AccountInfoResponse)
-    async def info(self, account_id: str) -> AccountInfoResponse:
-        """
-        Retrieve account information.
-        GET /accounts/{account_id}
-        """
-        pass
-
-    @endpoint("POST", path="_bulk", model=BulkAccountsResponse)
-    async def bulk_info(self, body: BulkAccountsRequest) -> BulkAccountsResponse:
-        """
-        Retrieve information for multiple accounts with Pydantic body and response model.
-        POST /accounts/_bulk
-        """
-        pass
-
-    @endpoint("POST", path="_bulk")
-    async def bulk_info_dict(self, body: dict) -> dict:
-        """
-        Retrieve information for multiple accounts with dict body and dict response.
-        POST /accounts/_bulk
-        """
-        pass
-```
-
-### Adding standalone endpoints
-
-Endpoints can also be defined directly within your client class.
-
-* If `path` is not specified, the method name will be used as the endpoint path automatically (e.g. `status` →
-  `/status`).
+Configure all core settings via the `@apiclient` decorator:
 
 ```python
-class TONAPI(APIClient):
-    url = "https://tonapi.io"
-    version = "v2"
+from apiq import apiclient, endpoint
 
+
+@apiclient(
+    base_url="https://tonapi.io",
+    headers={"Authorization": "Bearer <YOUR_API_KEY>"},
+    version="v2",
+    rps=1,
+    retries=2,
+)
+class TONAPI:
     @endpoint("GET")
     async def status(self) -> dict:
-        """
-        Check API status.
-        GET /status
-        """
-        pass
+        """Check API status (GET /status)"""
 
     @endpoint("GET")
     async def rates(self, tokens: str, currencies: str) -> dict:
-        """
-        Get token rates.
-        GET /rates?tokens={tokens}&currencies={currencies}
-        """
-        pass
+        """Get token rates (GET /rates?tokens={tokens}&currencies={currencies})"""
+```
+
+**Note:**
+No base class required. The decorator injects all async context, rate limiting, and HTTP logic automatically.
+
+---
+
+### 3. Group endpoints with namespaces (optional)
+
+For logical endpoint grouping (e.g., `/accounts`, `/users`), use the `@apinamespace` decorator:
+
+```python
+from apiq import apinamespace, endpoint
+
+
+@apinamespace("accounts")
+class Accounts:
+
+    @endpoint("GET", path="/{account_id}", as_model=AccountInfoResponse)
+    async def info(self, account_id: str) -> AccountInfoResponse:
+        """Retrieve account info (GET /accounts/{account_id})"""
+
+    @endpoint("POST", path="/_bulk", as_model=BulkAccountsResponse)
+    async def bulk_info(self, body: BulkAccountsRequest) -> BulkAccountsResponse:
+        """Retrieve info for multiple accounts (POST /accounts/_bulk)"""
+
+    @endpoint("POST", path="/_bulk")
+    async def bulk_info_dict(self, body: dict) -> dict:
+        """Retrieve info for multiple accounts (dict body) (POST /accounts/_bulk)"""
+```
+
+Then compose in your main client:
+
+```python
+@apiclient(
+    base_url="https://tonapi.io",
+    headers={"Authorization": "Bearer <YOUR_API_KEY>"},
+    version="v2",
+    rps=1,
+    retries=2,
+)
+class TONAPI:
+    # ... endpoints above ...
 
     @property
     def accounts(self) -> Accounts:
         return Accounts(self)
 ```
 
-### Calling endpoints
+**Note:**
 
-Example usage demonstrating:
+* You can use `"accounts"` or `"/accounts"` in `@apinamespace` — leading slash is optional and combined automatically
+  with the endpoint path.
 
-* Positional and keyword arguments.
-* POST body as either a Pydantic model or dict.
-* Returning raw dict responses when no model is defined.
+---
+
+### 4. Usage
 
 ```python
 async def main():
-    tonapi = TONAPI(rps=1, debug=True)
+    tonapi = TONAPI()
 
-    # GET /status
-    status = await tonapi.status()
-
-    # GET /rates with positional arguments
-    rates_positional = await tonapi.rates("ton", "usd")
-
-    # GET /rates with keyword arguments
-    rates_keyword = await tonapi.rates(tokens="ton", currencies="usd")
-
-    # GET /accounts/{account_id} with positional argument
-    account_positional = await tonapi.accounts.info("UQCDrgGaI6gWK-qlyw69xWZosurGxrpRgIgSkVsgahUtxZR0")
-
-    # GET /accounts/{account_id} with keyword argument
-    account_keyword = await tonapi.accounts.info(account_id="UQCDrgGaI6gWK-qlyw69xWZosurGxrpRgIgSkVsgahUtxZR0")
-
-    # POST /accounts/_bulk with a Pydantic model body and response
-    accounts_bulk_model = await tonapi.accounts.bulk_info(
-        body=BulkAccountsRequest(
-            account_ids=[
-                "UQCDrgGaI6gWK-qlyw69xWZosurGxrpRgIgSkVsgahUtxZR0",
-                "UQC-3ilVr-W0Uc3pLrGJElwSaFxvhXXfkiQA3EwdVBHNNbbp",
-            ]
-        )
-    )
-
-    # POST /accounts/_bulk with a dict body and response
-    accounts_bulk_dict = await tonapi.accounts.bulk_info_dict(
-        body={
-            "account_ids": [
-                "UQCDrgGaI6gWK-qlyw69xWZosurGxrpRgIgSkVsgahUtxZR0",
-                "UQC-3ilVr-W0Uc3pLrGJElwSaFxvhXXfkiQA3EwdVBHNNbbp",
-            ]
-        }
-    )
-
-    print("Status:", status)
-    print("Rates (positional):", rates_positional)
-    print("Rates (keyword):", rates_keyword)
-    print("Account (positional):", account_positional)
-    print("Account (keyword):", account_keyword)
-    print("Bulk accounts (model):", accounts_bulk_model)
-    print("Bulk accounts (dict):", accounts_bulk_dict)
-
-
-if __name__ == "__main__":
-    import asyncio
-
-    logging.basicConfig(level=logging.DEBUG)
-    asyncio.run(main())
+    async with tonapi:
+        # Direct endpoint
+        status = await tonapi.status()
+        print(status)
+        # Namespaced endpoint
+        account = await tonapi.accounts.info("UQCDrgGaI6gWK-qlyw69xWZosurGxrpRgIgSkVsgahUtxZR0")
+        print(account)
 ```
+
+---
+
+## API Configuration
+
+All settings are passed to the `@apiclient` decorator:
+
+| Name       | Type  | Description                                        | Default |
+|------------|-------|----------------------------------------------------|---------|
+| `base_url` | str   | Base URL for your API (must start with http/https) | —       |
+| `headers`  | dict  | Default headers (e.g. Authorization)               | None    |
+| `timeout`  | float | Default timeout (seconds)                          | None    |
+| `rps`      | int   | Max requests per second (rate limit)               | 1       |
+| `retries`  | int   | Max retries for 429 (Too Many Requests)            | 3       |
+| `cookies`  | dict  | Cookies to send with every request                 | None    |
+
+---
+
+## Endpoints
+
+* Use `@endpoint` to mark methods as API endpoints.
+* All method arguments are automatically mapped to path or query parameters.
+* For `POST` and `PUT` requests, the `body` can be a Pydantic model or a dict.
+* The return type depends on `response_type` and the `as_model` argument.
+
+---
 
 ### Notes
 
-* **POST body payloads** can be provided as Pydantic models or plain dicts.
-* If no `model` is specified in `@endpoint`, the raw dict response is returned.
-* If `path` is not specified in `@endpoint`, it defaults to the method name as the endpoint path.
+* All endpoints and clients are **fully async**; always use `async with` for resource cleanup.
+* You may use flat client classes or split logic into namespaces as needed.
+* If `as_model` is not set in `@endpoint`, the raw dict (parsed JSON) is returned.
+* If `path` is omitted, the method name is used as the endpoint path (e.g., `status` → `/status`).
+
+---
 
 ## Contribution
 
-We welcome your contributions! If you have ideas for improvement or have identified a bug, please create an issue or
-submit a pull request.
+We welcome your contributions!
+If you have ideas for improvement or find a bug, please create an issue or submit a pull request.
+
+---
 
 ## License
 
-This repository is distributed under the [MIT License](LICENSE).
-Feel free to use, modify, and distribute the code in accordance with the terms of the license.
+Distributed under the [MIT License](LICENSE).
+Feel free to use, modify, and distribute in accordance with the license.
