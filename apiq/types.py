@@ -1,22 +1,28 @@
 from __future__ import annotations
 
-from enum import Enum
+import typing as t
+from enum import Enum, auto
+
+__all__ = [
+    "HTTPMethod",
+    "ReturnType",
+    "ReturnAs",
+]
 
 
-class ResponseType(str, Enum):
-    """
-    Enumeration of supported response types for API client requests.
+class HTTPMethod(str, Enum):
+    GET = "GET"
+    POST = "POST"
+    PUT = "PUT"
+    DELETE = "DELETE"
 
-    Used to specify how the client should parse and return the response content.
 
-    :cvar RESPONSE: Return the raw aiohttp.ClientResponse object.
-    :cvar BYTES: Return the response body as bytes.
-    :cvar JSON: Parse and return the response body as a JSON object (dict or list).
-    :cvar TEXT: Return the response body as a decoded text string.
-    :cvar STREAM: Stream the response data as received from the server.
-    """
-    RESPONSE = "response"
-    BYTES = "bytes"
-    JSON = "json"
-    TEXT = "text"
-    STREAM = "stream"
+class ReturnType(str, Enum):
+    RESPONSE = auto()
+    BYTES = auto()
+    JSON = auto()
+    TEXT = auto()
+    NONE = auto()
+
+
+ReturnAs = t.Optional[t.Union[ReturnType, t.Type[t.Any]]]
