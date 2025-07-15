@@ -5,9 +5,9 @@ with open("README.md", "r", encoding="utf-8") as fh:
 
 setuptools.setup(
     name="apiq",
-    version="0.0.2",
+    version="0.0.3",
     author="nessshon",
-    description="Elegant async API client framework with intuitive decorators for quick integration",
+    description="APIQ is a modern Python toolkit for building both synchronous and asynchronous API clients with clean, minimal code and full type safety.",
     long_description=long_description,
     long_description_content_type="text/markdown",
     url="https://github.com/nessshon/apiq",
@@ -22,6 +22,8 @@ setuptools.setup(
         "aiohttp>=3.7.0,<=3.12.2",
         "aiolimiter~=1.2.1",
         "pydantic>=2.0,<3.0",
+        "requests~=2.32.4",
+        "ratelimiter~=1.2.0.post0",
     ],
     classifiers=[
         "Development Status :: 4 - Beta",
@@ -36,6 +38,6 @@ setuptools.setup(
         "Framework :: AsyncIO",
         "Environment :: Console",
     ],
-    keywords="api client async http aiohttp pydantic",
+    keywords="api client async sync http aiohttp requests pydantic",
     license="MIT",
 )
