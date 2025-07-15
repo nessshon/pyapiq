@@ -2,7 +2,7 @@ from typing import List
 
 from pydantic import BaseModel
 
-from apiq import apiclient, apinamespace, endpoint
+from apiq import AsyncClientAPI, AsyncAPINamespace, async_endpoint
 
 
 class BulkAccountsRequest(BaseModel):
@@ -19,36 +19,34 @@ class BulkAccountsResponse(BaseModel):
     accounts: List[AccountInfoResponse]
 
 
-@apinamespace("accounts")
-class Accounts:
+class Accounts(AsyncAPINamespace):
+    namespace = "accounts"
 
-    @endpoint("GET", path="/{account_id}", as_model=AccountInfoResponse)
+    @async_endpoint("GET", path="/{account_id}", return_as=AccountInfoResponse)
     async def info(self, account_id: str) -> AccountInfoResponse:
         """Retrieve account information by account_id (GET /accounts/{account_id})"""
 
-    @endpoint("POST", path="/_bulk", as_model=BulkAccountsResponse)
-    async def bulk_info(self, body: BulkAccountsRequest) -> BulkAccountsResponse:
+    @async_endpoint("POST", path="/_bulk", return_as=BulkAccountsResponse)
+    async def bulk_info(self, payload: BulkAccountsRequest) -> BulkAccountsResponse:
         """Retrieve info for multiple accounts with a Pydantic model (POST /accounts/_bulk)"""
 
-    @endpoint("POST", path="/_bulk")
-    async def bulk_info_dict(self, body: dict) -> dict:
+    @async_endpoint("POST", path="/_bulk")
+    async def bulk_info_dict(self, payload: dict) -> dict:
         """Retrieve info for multiple accounts with a dict payload (POST /accounts/_bulk)"""
 
 
-@apiclient(
-    base_url="https://tonapi.io",
-    headers={"Authorization": "Bearer <YOUR_API_KEY>"},
-    version="v2",
-    rps=1,
-    retries=2,
-)
-class TONAPI:
+class AsyncTONAPI(AsyncClientAPI):
+    base_url = "https://tonapi.io"
+    headers = {"Authorization": "Bearer <YOUR_API_KEY>"}
+    version = "v2"
+    rps = 1
+    max_retries = 2
 
-    @endpoint("GET")
+    @async_endpoint("GET")
     async def status(self) -> dict:
         """Check API status (GET /status)"""
 
-    @endpoint("GET")
+    @async_endpoint("GET")
     async def rates(self, tokens: str, currencies: str) -> dict:
         """Get token rates (GET /rates?tokens={tokens}&currencies={currencies})"""
 
@@ -58,7 +56,7 @@ class TONAPI:
 
 
 async def main():
-    tonapi = TONAPI()
+    tonapi = AsyncTONAPI()
 
     async with tonapi:
         # GET /status
@@ -72,18 +70,18 @@ async def main():
         account_positional = await tonapi.accounts.info("UQCDrgGaI6gWK-qlyw69xWZosurGxrpRgIgSkVsgahUtxZR0")
         account_keyword = await tonapi.accounts.info(account_id="UQCDrgGaI6gWK-qlyw69xWZosurGxrpRgIgSkVsgahUtxZR0")
 
-        # POST /accounts/_bulk (with a Pydantic model body)
+        # POST /accounts/_bulk (with a Pydantic model payload)
         accounts_bulk_model = await tonapi.accounts.bulk_info(
-            body=BulkAccountsRequest(
+            payload=BulkAccountsRequest(
                 account_ids=[
                     "UQCDrgGaI6gWK-qlyw69xWZosurGxrpRgIgSkVsgahUtxZR0",
                     "UQC-3ilVr-W0Uc3pLrGJElwSaFxvhXXfkiQA3EwdVBHNNbbp",
                 ]
             )
         )
-        # POST /accounts/_bulk (with a dict body)
+        # POST /accounts/_bulk (with a dict payload)
         accounts_bulk_dict = await tonapi.accounts.bulk_info_dict(
-            body={
+            payload={
                 "account_ids": [
                     "UQCDrgGaI6gWK-qlyw69xWZosurGxrpRgIgSkVsgahUtxZR0",
                     "UQC-3ilVr-W0Uc3pLrGJElwSaFxvhXXfkiQA3EwdVBHNNbbp",
