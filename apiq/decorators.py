@@ -52,6 +52,7 @@ def _build_request(
         query_params = {
             k: v for k, v in args_dict.items()
             if k not in path_keys and k != "payload"
+            and v is not None
         }
 
         payload = kwargs.pop("payload", args_dict.pop("payload", None))
