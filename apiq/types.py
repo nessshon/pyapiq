@@ -7,13 +7,18 @@ __all__ = [
     "HTTPMethod",
     "ReturnType",
     "ReturnAs",
+    "RepeatQuery",
 ]
+
+
+class RepeatQuery: ...
 
 
 class HTTPMethod(str, Enum):
     GET = "GET"
     POST = "POST"
     PUT = "PUT"
+    PATCH = "PATCH"
     DELETE = "DELETE"
 
 
