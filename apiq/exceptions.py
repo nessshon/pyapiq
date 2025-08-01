@@ -8,6 +8,7 @@ __all__ = [
     "MissingBaseURLError",
     "RateLimitExceeded",
     "UnsupportedResponseType",
+    "GETRequestPayloadError",
     "APIClientBadRequestError",
     "APIClientUnauthorizedError",
     "APIClientForbiddenError",
@@ -28,12 +29,12 @@ class APIQException(Exception):
 class APIClientResponseError(APIQException):
 
     def __init__(
-            self,
-            message: str,
-            *,
-            status_code: int,
-            url: t.Optional[str] = None,
-            detail: t.Any = None,
+        self,
+        message: str,
+        *,
+        status_code: int,
+        url: t.Optional[str] = None,
+        detail: t.Any = None,
     ) -> None:
         self.message = message
         self.status_code = status_code
@@ -59,10 +60,10 @@ class APIClientResponseError(APIQException):
 
 class APIClientTypeError(APIQException):
     def __init__(
-            self,
-            namespace: str,
-            expected_type: type,
-            received_instance: t.Any,
+        self,
+        namespace: str,
+        expected_type: type,
+        received_instance: t.Any,
     ) -> None:
         message = (
             f"{namespace} requires a 'client' that is a subclass of {expected_type.__name__}, "
@@ -97,6 +98,15 @@ class UnsupportedResponseType(APIQException):
 
     def _format_message(self) -> str:
         return f"Client Error; message: {self.message}"
+
+
+class GETRequestPayloadError(APIQException):
+    def __init__(self, key: str, value: t.Any) -> None:
+        message = (
+            f"GET method should not receive payload-like data. "
+            f"Got key '{key}' with type '{type(value).__name__}' which is not allowed."
+        )
+        super().__init__(message)
 
 
 class APIClientBadRequestError(APIClientResponseError): ...
