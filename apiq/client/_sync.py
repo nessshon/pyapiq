@@ -3,6 +3,7 @@ from __future__ import annotations
 import typing as t
 
 import requests
+from requests import Response
 
 from ._base import BaseClientAPI
 from ..exceptions import UnsupportedResponseType
@@ -74,10 +75,12 @@ class SyncClientAPI(BaseClientAPI, SyncRequestor):
 
         status = response.status_code
         url = response.url
-        data: t.Optional[t.Union[bytes, str, t.Dict[str, t.Any]]]
+        data: t.Optional[t.Union[Response, bytes, str, t.Dict[str, t.Any]]]
 
-        if return_type == ReturnType.RESPONSE:
-            data = None
+        if return_type in {ReturnType.NONE, ReturnType.TEXT}:
+            data = response.text
+        elif return_type == ReturnType.RESPONSE:
+            data = response
         elif return_type == ReturnType.BYTES:
             data = response.content
         elif return_type == ReturnType.TEXT:

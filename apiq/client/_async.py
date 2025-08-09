@@ -74,14 +74,14 @@ class AsyncClientAPI(BaseClientAPI, AsyncRequestor):
 
         status = response.status
         url = str(response.url)
-        data: t.Optional[t.Union[bytes, str, t.Dict[str, t.Any]]]
+        data: t.Optional[t.Union[ClientResponse, bytes, str, t.Dict[str, t.Any]]]
 
-        if return_type == ReturnType.RESPONSE:
-            data = None
+        if return_type in {ReturnType.NONE, ReturnType.TEXT}:
+            data = await response.text()
+        elif return_type == ReturnType.RESPONSE:
+            data = response
         elif return_type == ReturnType.BYTES:
             data = await response.read()
-        elif return_type == ReturnType.TEXT:
-            data = await response.text()
         elif return_type == ReturnType.JSON:
             try:
                 data = await response.json()

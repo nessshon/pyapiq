@@ -80,14 +80,12 @@ class ResponseParser:
     ) -> t.Any:
         return_type, model = self.detect_return_type()
 
+        if status >= 400:
+            ErrorParser.raise_for(status, data, url)
         if return_type == ReturnType.NONE:
             return None
         if return_type == ReturnType.RESPONSE:
             return raw_response
-
-        if status >= 400:
-            ErrorParser.raise_for(status, data, url)
-
         if model is not None:
             return self._deserialize_model(model, data)
 
