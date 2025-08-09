@@ -2,8 +2,10 @@ from __future__ import annotations
 
 import typing as t
 
-import requests
-from requests import Response
+from requests import (
+    Response,
+    Session,
+)
 
 from ._base import BaseClientAPI
 from ..exceptions import UnsupportedResponseType
@@ -22,16 +24,16 @@ class SyncClientAPI(BaseClientAPI, SyncRequestor):
     timeout: t.Optional[float] = None
 
     def __init__(
-            self,
-            base_url: t.Optional[str] = None,
-            version: t.Optional[str] = None,
-            rps: t.Optional[int] = None,
-            max_retries: t.Optional[int] = None,
-            *,
-            session: t.Optional[requests.Session] = None,
-            headers: t.Optional[dict[str, str]] = None,
-            timeout: t.Optional[float] = None,
-            cookies: t.Optional[dict[str, str]] = None,
+        self,
+        base_url: t.Optional[str] = None,
+        version: t.Optional[str] = None,
+        rps: t.Optional[int] = None,
+        max_retries: t.Optional[int] = None,
+        *,
+        session: t.Optional[Session] = None,
+        headers: t.Optional[dict[str, str]] = None,
+        timeout: t.Optional[float] = None,
+        cookies: t.Optional[dict[str, str]] = None,
     ) -> None:
         self.base_url = base_url or self.__class__.base_url
         self.version = version or self.__class__.version
@@ -57,18 +59,18 @@ class SyncClientAPI(BaseClientAPI, SyncRequestor):
         return self
 
     def __exit__(
-            self,
-            exc_type: t.Optional[type[BaseException]],
-            exc_value: t.Optional[BaseException],
-            traceback: t.Optional[t.Any],
+        self,
+        exc_type: t.Optional[type[BaseException]],
+        exc_value: t.Optional[BaseException],
+        traceback: t.Optional[t.Any],
     ) -> None:
         self.close()
 
     @staticmethod
     def parse_response(
-            response: requests.Response,
-            *,
-            return_as: ReturnAs = ReturnType.JSON,
+        response: Response,
+        *,
+        return_as: ReturnAs = ReturnType.JSON,
     ) -> t.Any:
         parser = ResponseParser(return_as=return_as)
         return_type, _ = parser.detect_return_type()
@@ -101,16 +103,16 @@ class SyncClientAPI(BaseClientAPI, SyncRequestor):
         )
 
     def request(
-            self,
-            method: HTTPMethod,
-            url: str,
-            *,
-            params: t.Optional[t.Dict[str, t.Any]] = None,
-            payload: t.Optional[t.Dict[str, t.Any]] = None,
-            return_as: ReturnAs = ReturnType.JSON,
-            headers: t.Optional[t.Dict[str, str]] = None,
-            cookies: t.Optional[t.Dict[str, str]] = None,
-            timeout: t.Optional[float] = None,
+        self,
+        method: HTTPMethod,
+        url: str,
+        *,
+        params: t.Optional[t.Dict[str, t.Any]] = None,
+        payload: t.Optional[t.Dict[str, t.Any]] = None,
+        return_as: ReturnAs = ReturnType.JSON,
+        headers: t.Optional[t.Dict[str, str]] = None,
+        cookies: t.Optional[t.Dict[str, str]] = None,
+        timeout: t.Optional[float] = None,
     ) -> t.Any:
         self.ensure_session()
         assert self._session is not None
@@ -132,7 +134,7 @@ class SyncClientAPI(BaseClientAPI, SyncRequestor):
 
     def ensure_session(self) -> None:
         if self._session is None:
-            self._session = requests.Session()
+            self._session = Session()
             if self.headers is not None:
                 self._session.headers.update(self.headers)
             if self.cookies is not None:

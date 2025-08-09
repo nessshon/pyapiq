@@ -19,9 +19,9 @@ class ErrorParser:
 
     @staticmethod
     def detect_gateway_error(
-            content: t.Any,
-            status_code: int,
-            url: str,
+        content: t.Any,
+        status_code: int,
+        url: str,
     ) -> t.Optional[APIClientResponseError]:
         if isinstance(content, dict):
             body = " ".join(str(v).lower() for v in content.values())
@@ -71,12 +71,12 @@ class ResponseParser:
         self.return_as = return_as
 
     def parse(
-            self,
-            *,
-            status: int,
-            url: str,
-            data: t.Any,
-            raw_response: t.Optional[t.Any] = None,
+        self,
+        *,
+        status: int,
+        url: str,
+        data: t.Any,
+        raw_response: t.Optional[t.Any] = None,
     ) -> t.Any:
         return_type, model = self.detect_return_type()
 

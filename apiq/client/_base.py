@@ -10,10 +10,10 @@ class BaseClientAPI:
     version: t.Optional[str] = None
 
     def __init__(
-            self,
-            base_url: t.Optional[str] = None,
-            version: t.Optional[str] = None,
-            **kwargs: t.Any,
+        self,
+        base_url: t.Optional[str] = None,
+        version: t.Optional[str] = None,
+        **kwargs: t.Any,
     ) -> None:
         super().__init__(**kwargs)
         self.base_url = base_url or self.__class__.base_url

@@ -19,9 +19,20 @@ __all__ = [
 P = t.ParamSpec("P")
 R = t.TypeVar("R")
 
-AsyncClientLike = t.Union[AsyncClientAPI, AsyncAPINamespace]
-SyncClientLike = t.Union[SyncClientAPI, SyncAPINamespace]
-ClientLike = t.Union[AsyncClientAPI, AsyncAPINamespace, SyncClientAPI, SyncAPINamespace]
+AsyncClientLike = t.Union[
+    AsyncClientAPI,
+    AsyncAPINamespace,
+]
+SyncClientLike = t.Union[
+    SyncClientAPI,
+    SyncAPINamespace,
+]
+ClientLike = t.Union[
+    AsyncClientAPI,
+    AsyncAPINamespace,
+    SyncClientAPI,
+    SyncAPINamespace,
+]
 
 
 def _build_url(

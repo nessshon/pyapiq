@@ -13,23 +13,29 @@ class AsyncAPINamespace(BaseAPINamespace, abc.ABC):
 
     def __init__(self, client: AsyncClientAPI) -> None:
         if not isinstance(client, AsyncClientAPI):
-            raise APIClientTypeError(self.__class__.__name__, AsyncClientAPI, client)
+            raise APIClientTypeError(
+                self.__class__.__name__,
+                AsyncClientAPI,
+                client,
+            )
+
         self.client = client
 
     async def request(
-            self,
-            method: HTTPMethod,
-            url: str,
-            *,
-            params: t.Optional[t.Dict[str, t.Any]] = None,
-            payload: t.Optional[t.Dict[str, t.Any]] = None,
-            return_as: ReturnAs = ReturnType.JSON,
-            headers: t.Optional[t.Dict[str, str]] = None,
-            cookies: t.Optional[t.Dict[str, str]] = None,
-            timeout: t.Optional[float] = None,
+        self,
+        method: HTTPMethod,
+        url: str,
+        *,
+        params: t.Optional[t.Dict[str, t.Any]] = None,
+        payload: t.Optional[t.Dict[str, t.Any]] = None,
+        return_as: ReturnAs = ReturnType.JSON,
+        headers: t.Optional[t.Dict[str, str]] = None,
+        cookies: t.Optional[t.Dict[str, str]] = None,
+        timeout: t.Optional[float] = None,
     ) -> t.Any:
         return await self.client.request(
-            method, url,
+            method,
+            url,
             params=params,
             payload=payload,
             return_as=return_as,

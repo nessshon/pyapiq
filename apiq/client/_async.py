@@ -2,7 +2,11 @@ from __future__ import annotations
 
 import typing as t
 
-from aiohttp import ClientSession, ClientResponse, ClientTimeout
+from aiohttp import (
+    ClientSession,
+    ClientResponse,
+    ClientTimeout,
+)
 
 from ._base import BaseClientAPI
 from ..exceptions import UnsupportedResponseType
@@ -21,16 +25,16 @@ class AsyncClientAPI(BaseClientAPI, AsyncRequestor):
     timeout: t.Optional[float] = None
 
     def __init__(
-            self,
-            base_url: t.Optional[str] = None,
-            version: t.Optional[str] = None,
-            rps: t.Optional[int] = None,
-            max_retries: t.Optional[int] = None,
-            *,
-            session: t.Optional[ClientSession] = None,
-            headers: t.Optional[t.Dict[str, str]] = None,
-            timeout: t.Optional[float] = None,
-            cookies: t.Optional[t.Dict[str, str]] = None,
+        self,
+        base_url: t.Optional[str] = None,
+        version: t.Optional[str] = None,
+        rps: t.Optional[int] = None,
+        max_retries: t.Optional[int] = None,
+        *,
+        session: t.Optional[ClientSession] = None,
+        headers: t.Optional[t.Dict[str, str]] = None,
+        timeout: t.Optional[float] = None,
+        cookies: t.Optional[t.Dict[str, str]] = None,
     ) -> None:
         self.base_url = base_url or self.__class__.base_url
         self.version = version or self.__class__.version
@@ -56,18 +60,18 @@ class AsyncClientAPI(BaseClientAPI, AsyncRequestor):
         return self
 
     async def __aexit__(
-            self,
-            exc_type: t.Optional[t.Type[BaseException]],
-            exc_value: t.Optional[BaseException],
-            traceback: t.Optional[t.Any],
+        self,
+        exc_type: t.Optional[t.Type[BaseException]],
+        exc_value: t.Optional[BaseException],
+        traceback: t.Optional[t.Any],
     ) -> None:
         await self.close()
 
     @staticmethod
     async def parse_response(
-            response: ClientResponse,
-            *,
-            return_as: ReturnAs = ReturnType.JSON,
+        response: ClientResponse,
+        *,
+        return_as: ReturnAs = ReturnType.JSON,
     ) -> t.Any:
         parser = ResponseParser(return_as=return_as)
         return_type, _ = parser.detect_return_type()
@@ -99,16 +103,16 @@ class AsyncClientAPI(BaseClientAPI, AsyncRequestor):
         )
 
     async def request(
-            self,
-            method: HTTPMethod,
-            url: str,
-            *,
-            params: t.Optional[t.Dict[str, t.Any]] = None,
-            payload: t.Optional[t.Dict[str, t.Any]] = None,
-            return_as: ReturnAs = ReturnType.JSON,
-            headers: t.Optional[t.Dict[str, str]] = None,
-            cookies: t.Optional[t.Dict[str, str]] = None,
-            timeout: t.Optional[float] = None,
+        self,
+        method: HTTPMethod,
+        url: str,
+        *,
+        params: t.Optional[t.Dict[str, t.Any]] = None,
+        payload: t.Optional[t.Dict[str, t.Any]] = None,
+        return_as: ReturnAs = ReturnType.JSON,
+        headers: t.Optional[t.Dict[str, str]] = None,
+        cookies: t.Optional[t.Dict[str, str]] = None,
+        timeout: t.Optional[float] = None,
     ) -> t.Any:
         await self.ensure_session()
         assert self._session is not None
