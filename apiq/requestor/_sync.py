@@ -1,3 +1,4 @@
+import time
 import typing as t
 
 from ratelimiter import RateLimiter
@@ -61,6 +62,9 @@ class SyncRequestor:
 
             if attempt == attempts:
                 raise RateLimitExceeded(url, attempt)
+
+            if self._limiter is None:
+                time.sleep(1)
 
         raise RateLimitExceeded(url, attempts)
 

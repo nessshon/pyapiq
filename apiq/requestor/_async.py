@@ -1,3 +1,4 @@
+import asyncio
 import typing as t
 
 from aiohttp import (
@@ -67,6 +68,9 @@ class AsyncRequestor:
 
             if attempt == attempts:
                 raise RateLimitExceeded(url, attempt)
+
+            if self._limiter is None:
+                await asyncio.sleep(1)
 
         raise RateLimitExceeded(url, attempts)
 
