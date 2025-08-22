@@ -2,7 +2,8 @@ from typing import List
 
 from pydantic import BaseModel
 
-from apiq import AsyncClientAPI, AsyncAPINamespace, async_endpoint
+from pyapiq import AsyncClientAPI, AsyncAPINamespace, async_endpoint
+from pyapiq.types import HTTPMethod
 
 
 class BulkAccountsRequest(BaseModel):
@@ -22,15 +23,15 @@ class BulkAccountsResponse(BaseModel):
 class Accounts(AsyncAPINamespace):
     namespace = "accounts"
 
-    @async_endpoint("GET", path="/{account_id}", return_as=AccountInfoResponse)
+    @async_endpoint(HTTPMethod.GET, path="/{account_id}", return_as=AccountInfoResponse)
     async def info(self, account_id: str) -> AccountInfoResponse:
         """Retrieve account information by account_id (GET /accounts/{account_id})"""
 
-    @async_endpoint("POST", path="/_bulk", return_as=BulkAccountsResponse)
+    @async_endpoint(HTTPMethod.POST, path="/_bulk", return_as=BulkAccountsResponse)
     async def bulk_info(self, payload: BulkAccountsRequest) -> BulkAccountsResponse:
         """Retrieve info for multiple accounts with a Pydantic model (POST /accounts/_bulk)"""
 
-    @async_endpoint("POST", path="/_bulk")
+    @async_endpoint(HTTPMethod.POST, path="/_bulk")
     async def bulk_info_dict(self, payload: dict) -> dict:
         """Retrieve info for multiple accounts with a dict payload (POST /accounts/_bulk)"""
 
@@ -42,11 +43,11 @@ class AsyncTONAPI(AsyncClientAPI):
     rps = 1
     max_retries = 2
 
-    @async_endpoint("GET")
+    @async_endpoint(HTTPMethod.GET)
     async def status(self) -> dict:
         """Check API status (GET /status)"""
 
-    @async_endpoint("GET")
+    @async_endpoint(HTTPMethod.GET)
     async def rates(self, tokens: str, currencies: str) -> dict:
         """Get token rates (GET /rates?tokens={tokens}&currencies={currencies})"""
 
@@ -67,8 +68,12 @@ async def main():
         rates_keyword = await tonapi.rates(tokens="ton", currencies="usd")
 
         # GET /accounts/{account_id} (with positional and keyword arguments)
-        account_positional = await tonapi.accounts.info("UQCDrgGaI6gWK-qlyw69xWZosurGxrpRgIgSkVsgahUtxZR0")
-        account_keyword = await tonapi.accounts.info(account_id="UQCDrgGaI6gWK-qlyw69xWZosurGxrpRgIgSkVsgahUtxZR0")
+        account_positional = await tonapi.accounts.info(
+            "UQCDrgGaI6gWK-qlyw69xWZosurGxrpRgIgSkVsgahUtxZR0"
+        )
+        account_keyword = await tonapi.accounts.info(
+            account_id="UQCDrgGaI6gWK-qlyw69xWZosurGxrpRgIgSkVsgahUtxZR0"
+        )
 
         # POST /accounts/_bulk (with a Pydantic model payload)
         accounts_bulk_model = await tonapi.accounts.bulk_info(
