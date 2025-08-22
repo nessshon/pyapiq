@@ -3,7 +3,6 @@ import typing as t
 
 from ._base import BaseAPINamespace
 from ..client import AsyncClientAPI
-from ..exceptions import APIClientTypeError
 from ..types import HTTPMethod, ReturnAs, ReturnType
 
 
@@ -12,13 +11,6 @@ class AsyncAPINamespace(BaseAPINamespace, abc.ABC):
     namespace: str
 
     def __init__(self, client: AsyncClientAPI) -> None:
-        if not isinstance(client, AsyncClientAPI):
-            raise APIClientTypeError(
-                self.__class__.__name__,
-                AsyncClientAPI,
-                client,
-            )
-
         self.client = client
 
     async def request(

@@ -98,7 +98,6 @@ class ResponseParser:
             return self.return_as, None
         if isinstance(self.return_as, type):
             return ReturnType.JSON, self.return_as
-        raise TypeError(f"Invalid 'return_as': {self.return_as!r}")
 
     @staticmethod
     def _deserialize_model(model: t.Type[t.Any], data: t.Any) -> t.Any:

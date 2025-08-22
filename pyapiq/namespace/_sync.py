@@ -3,7 +3,6 @@ import typing as t
 
 from ._base import BaseAPINamespace
 from ..client import SyncClientAPI
-from ..exceptions import APIClientTypeError
 from ..types import HTTPMethod, ReturnAs, ReturnType
 
 
@@ -12,13 +11,6 @@ class SyncAPINamespace(BaseAPINamespace, abc.ABC):
     namespace: str
 
     def __init__(self, client: SyncClientAPI) -> None:
-        if not isinstance(client, SyncClientAPI):
-            raise APIClientTypeError(
-                self.__class__.__name__,
-                SyncClientAPI,
-                client,
-            )
-
         self.client = client
 
     def request(
