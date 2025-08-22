@@ -4,19 +4,19 @@ with open("README.md", "r", encoding="utf-8") as fh:
     long_description = fh.read()
 
 setuptools.setup(
-    name="apiq",
-    version="0.0.9",
+    name="pyapiq",
+    version="0.1.0",
     author="nessshon",
-    description="APIQ is a modern Python toolkit for building both synchronous and asynchronous API clients with clean, minimal code and full type safety.",
+    description="PyAPIq is a modern Python toolkit for building both synchronous and asynchronous API clients with clean, minimal code and full type safety.",
     long_description=long_description,
     long_description_content_type="text/markdown",
-    url="https://github.com/nessshon/apiq",
+    url="https://github.com/nessshon/pyapiq",
     project_urls={
-        "Source": "https://github.com/nessshon/apiq",
-        "Issues": "https://github.com/nessshon/apiq/issues",
+        "Source": "https://github.com/nessshon/pyapiq",
+        "Issues": "https://github.com/nessshon/pyapiq/issues",
     },
-    packages=setuptools.find_packages(include=["apiq", "apiq.*"]),
-    package_data={"apiq": ["py.typed"]},
+    packages=setuptools.find_packages(include=["pyapiq", "pyapiq.*"]),
+    package_data={"pyapiq": ["py.typed"]},
     python_requires=">=3.10",
     install_requires=[
         "aiohttp>=3.7.0,<=3.12.2",
