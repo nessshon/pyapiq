@@ -1,23 +1,23 @@
-# 📦 APIQ
+# 📦 PyAPIq
 
-[![PyPI](https://img.shields.io/pypi/v/apiq.svg?color=FFE873\&labelColor=3776AB)](https://pypi.python.org/pypi/apiq)
+[![PyPI](https://img.shields.io/pypi/v/pyapiq.svg?color=FFE873\&labelColor=3776AB)](https://pypi.python.org/pypi/pyapiq)
 ![Python Versions](https://img.shields.io/badge/Python-3.10%20--%203.12-black?color=FFE873\&labelColor=3776AB)
-[![License](https://img.shields.io/github/license/nessshon/apiq)](LICENSE)
+[![License](https://img.shields.io/github/license/nessshon/pyapiq)](LICENSE)
 
-**APIQ** is a modern Python toolkit for building both **synchronous** and **asynchronous** API clients with clean,
+**PyAPIq** is a modern Python toolkit for building both **synchronous** and **asynchronous** API clients with clean,
 minimal code and full type safety.
 
 Define endpoints using decorators like `@sync_endpoint` or `@async_endpoint`, structure logic with optional namespaces,
 and leverage Pydantic models for strict request/response validation — all with built-in rate limiting and retries.
 
-![Downloads](https://pepy.tech/badge/apiq)
-![Downloads](https://pepy.tech/badge/apiq/month)
-![Downloads](https://pepy.tech/badge/apiq/week)
+![Downloads](https://pepy.tech/badge/pyapiq)
+![Downloads](https://pepy.tech/badge/pyapiq/month)
+![Downloads](https://pepy.tech/badge/pyapiq/week)
 
 ## Installation
 
 ```bash
-pip install apiq
+pip install pyapiq
 ```
 
 ## Quickstart
@@ -50,7 +50,8 @@ class BulkAccountsResponse(BaseModel):
 Declare your API client by subclassing `AsyncClientAPI` and annotating endpoints with `@async_endpoint`:
 
 ```python
-from apiq import AsyncClientAPI, async_endpoint
+from pyapiq import AsyncClientAPI, async_endpoint
+from pyapiq.types import HTTPMethod
 
 
 class AsyncTONAPI(AsyncClientAPI):
@@ -60,16 +61,17 @@ class AsyncTONAPI(AsyncClientAPI):
     rps = 1
     max_retries = 2
 
-    @async_endpoint("GET")
+    @async_endpoint(HTTPMethod.GET)
     async def status(self) -> dict:
         """Check API status (GET /status)"""
 
-    @async_endpoint("GET")
+    @async_endpoint(HTTPMethod.GET)
     async def rates(self, tokens: str, currencies: str) -> dict:
         """Get token rates (GET /rates?tokens={tokens}&currencies={currencies})"""
 ```
 
 **Notes:**
+
 * If you prefer synchronous clients, simply use `SyncClientAPI` with `@sync_endpoint` instead.
 * For synchronous clients, use `SyncClientAPI` and `@sync_endpoint` — interface is fully symmetrical.
 * Method arguments are automatically mapped to path and query parameters. The return value is parsed from JSON and
@@ -80,21 +82,22 @@ class AsyncTONAPI(AsyncClientAPI):
 Use `AsyncAPINamespace` to logically organize endpoints under a common prefix (e.g., `/accounts`):
 
 ```python
-from apiq import AsyncAPINamespace, async_endpoint
+from pyapiq import AsyncAPINamespace, async_endpoint
+from pyapiq.types import HTTPMethod
 
 
 class Accounts(AsyncAPINamespace):
     namespace = "accounts"
 
-    @async_endpoint("GET", path="/{account_id}", return_as=AccountInfoResponse)
+    @async_endpoint(HTTPMethod.GET, path="/{account_id}", return_as=AccountInfoResponse)
     async def info(self, account_id: str) -> AccountInfoResponse:
         """Retrieve account information by account_id (GET /accounts/{account_id})"""
 
-    @async_endpoint("POST", path="/_bulk", return_as=BulkAccountsResponse)
+    @async_endpoint(HTTPMethod.POST, path="/_bulk", return_as=BulkAccountsResponse)
     async def bulk_info(self, payload: BulkAccountsRequest) -> BulkAccountsResponse:
         """Retrieve info for multiple accounts with a Pydantic model (POST /accounts/_bulk)"""
 
-    @async_endpoint("POST", path="/_bulk")
+    @async_endpoint(HTTPMethod.POST, path="/_bulk")
     async def bulk_info_dict(self, payload: dict) -> dict:
         """Retrieve info for multiple accounts with a dict payload (POST /accounts/_bulk)"""
 ```
