@@ -54,6 +54,10 @@ class SyncClientAPI(BaseClientAPI, SyncRequestor):
         self._session = session
         self._session_owner = session is None
 
+    @property
+    def session(self) -> t.Optional[Session]:
+        return self._session
+
     def __enter__(self) -> SyncClientAPI:
         self.ensure_session()
         return self

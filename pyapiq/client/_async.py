@@ -55,6 +55,10 @@ class AsyncClientAPI(BaseClientAPI, AsyncRequestor):
         self._session = session
         self._session_owner = session is None
 
+    @property
+    def session(self) -> t.Optional[ClientSession]:
+        return self._session
+
     async def __aenter__(self) -> AsyncClientAPI:
         await self.ensure_session()
         return self
