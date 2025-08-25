@@ -29,12 +29,11 @@ class ErrorParser:
             body = str(content).lower()
 
         for marker, message in CLOUD_PROTECTION_MARKERS.items():
-            if marker in body:
+            if marker.lower() in body.lower():
                 return APIClientResponseError(
                     message=message,
                     status_code=status_code,
                     url=url,
-                    detail=content,
                 )
         return None
 
