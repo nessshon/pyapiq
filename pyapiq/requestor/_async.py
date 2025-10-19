@@ -6,9 +6,9 @@ from aiohttp import (
     ClientSession,
     ClientTimeout,
 )
-from aiolimiter import AsyncLimiter
 
 from ..exceptions import RateLimitExceeded
+from ..limiter import AsyncLimiter
 from ..types import HTTPMethod
 
 

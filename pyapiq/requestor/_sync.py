@@ -1,10 +1,10 @@
 import time
 import typing as t
 
-from ratelimiter import RateLimiter
 from requests import Session, Response
 
 from ..exceptions import RateLimitExceeded
+from ..limiter import SyncLimiter
 from ..types import HTTPMethod
 
 
@@ -18,7 +18,7 @@ class SyncRequestor:
     ) -> None:
         super().__init__(**kwargs)
         self._max_retries = max_retries
-        self._limiter = RateLimiter(rps, 1) if rps is not None else None
+        self._limiter = SyncLimiter(rps, 1) if rps is not None else None
 
     def safe_request(
         self,
