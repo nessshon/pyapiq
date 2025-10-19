@@ -147,6 +147,9 @@ def async_endpoint(
     *,
     path: t.Optional[str] = None,
     return_as: ReturnAs = ReturnType.JSON,
+    headers: t.Optional[t.Dict[str, t.Any]] = None,
+    cookies: t.Optional[t.Dict[str, t.Any]] = None,
+    timeout: t.Optional[float] = None,
 ) -> t.Callable[[t.Callable[P, t.Awaitable[R]]], t.Callable[P, t.Awaitable[R]]]:
     def decorator(func: t.Callable[P, t.Awaitable[R]]) -> t.Callable[P, t.Awaitable[R]]:
         sig = inspect.signature(func)
@@ -156,6 +159,9 @@ def async_endpoint(
         async def wrapper(*args: P.args, **kwargs: P.kwargs) -> R:
             client = t.cast(AsyncClientLike, args[0])
             req = build_request(*args, **kwargs)
+            req["headers"] = headers
+            req["cookies"] = cookies
+            req["timeout"] = timeout
             return await client.request(**req)
 
         return t.cast(t.Callable[P, t.Awaitable[R]], wrapper)
@@ -168,6 +174,9 @@ def sync_endpoint(
     *,
     path: t.Optional[str] = None,
     return_as: ReturnAs = ReturnType.JSON,
+    headers: t.Optional[t.Dict[str, t.Any]] = None,
+    cookies: t.Optional[t.Dict[str, t.Any]] = None,
+    timeout: t.Optional[float] = None,
 ) -> t.Callable[[t.Callable[P, R]], t.Callable[P, R]]:
     def decorator(func: t.Callable[P, R]) -> t.Callable[P, R]:
         sig = inspect.signature(func)
@@ -177,6 +186,9 @@ def sync_endpoint(
         def wrapper(*args: P.args, **kwargs: P.kwargs) -> R:
             client = t.cast(SyncClientLike, args[0])
             req = build_request(*args, **kwargs)
+            req["headers"] = headers
+            req["cookies"] = cookies
+            req["timeout"] = timeout
             return client.request(**req)
 
         return t.cast(t.Callable[P, R], wrapper)
