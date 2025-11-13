@@ -118,8 +118,13 @@ class SyncClientAPI(BaseClientAPI, SyncRequestor):
         cookies: t.Optional[t.Dict[str, str]] = None,
         timeout: t.Optional[float] = None,
     ) -> t.Any:
-        self.ensure_session()
-        assert self._session is not None
+        if self._session is None:
+            raise RuntimeError(
+                "Client session is not initialized.\n"
+                f"Use `with {self.__class__.__name__}(...) as client:` "
+                "or `client.ensure_session()` before making requests."
+            )
+
         merged_headers = {**(self.headers or {}), **(headers or {})}
         merged_cookies = {**(self.cookies or {}), **(cookies or {})}
         merged_timeout = timeout if timeout is not None else self.timeout
