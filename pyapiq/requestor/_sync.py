@@ -13,12 +13,14 @@ class SyncRequestor:
     def __init__(
         self,
         rps: t.Optional[int] = None,
+        time_period: t.Optional[float] = None,
         max_retries: t.Optional[int] = None,
         **kwargs: t.Any,
     ) -> None:
         super().__init__(**kwargs)
         self._max_retries = max_retries
-        self._limiter = SyncLimiter(rps, 1) if rps is not None else None
+        time_period = time_period if time_period is not None else 1.0
+        self._limiter = SyncLimiter(rps, time_period) if rps is not None else None
 
     def safe_request(
         self,

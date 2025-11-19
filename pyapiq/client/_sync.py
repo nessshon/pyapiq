@@ -17,6 +17,7 @@ from ..utils import try_parse_json
 
 class SyncClientAPI(BaseClientAPI, SyncRequestor):
     rps: t.Optional[int] = None
+    time_period: t.Optional[float] = None
     max_retries: t.Optional[int] = None
 
     headers: t.Optional[t.Dict[str, str]] = None
@@ -28,6 +29,7 @@ class SyncClientAPI(BaseClientAPI, SyncRequestor):
         base_url: t.Optional[str] = None,
         version: t.Optional[str] = None,
         rps: t.Optional[int] = None,
+        time_period: t.Optional[float] = None,
         max_retries: t.Optional[int] = None,
         *,
         session: t.Optional[Session] = None,
@@ -39,12 +41,14 @@ class SyncClientAPI(BaseClientAPI, SyncRequestor):
         self.version = version or self.__class__.version
 
         self.rps = rps or self.__class__.rps
+        self.time_period = time_period or self.__class__.time_period
         self.max_retries = max_retries or self.__class__.max_retries
 
         super().__init__(
             base_url=self.base_url,
             version=self.version,
             rps=self.rps,
+            time_period=self.time_period,
             max_retries=self.max_retries,
         )
         self.headers = headers
