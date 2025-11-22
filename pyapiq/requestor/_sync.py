@@ -22,6 +22,10 @@ class SyncRequestor:
         time_period = time_period if time_period is not None else 1.0
         self._limiter = SyncLimiter(rps, time_period) if rps is not None else None
 
+    @property
+    def limiter(self) -> t.Optional[SyncLimiter]:
+        return self._limiter
+
     def safe_request(
         self,
         session: Session,

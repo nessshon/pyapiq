@@ -28,6 +28,10 @@ class AsyncRequestor:
             AsyncLimiter(rps, time_period) if rps is not None else None
         )
 
+    @property
+    def limiter(self) -> t.Optional[AsyncLimiter]:
+        return self._limiter
+
     async def safe_request(
         self,
         session: ClientSession,
