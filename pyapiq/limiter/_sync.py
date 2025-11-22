@@ -11,25 +11,40 @@ class SyncLimiter:
         self._max_calls = max_rate
         self._period = time_period
         self._lock = threading.Lock()
-        self._timestamps = []
+        self._timestamps: t.List[float] = []
 
-    def __enter__(self) -> SyncLimiter:
+    def when_ready(self) -> float:
+        now = time.monotonic()
         with self._lock:
-            now = time.monotonic()
-            self._timestamps = [
-                ts for ts in self._timestamps if now - ts < self._period
+            ts = [
+                timestamp
+                for timestamp in self._timestamps
+                if now - timestamp < self._period
             ]
+            used = len(ts)
+        if used < self._max_calls:
+            return 0.0
+        oldest = ts[0]
+        wait = self._period - (now - oldest)
+        return max(wait, 0.0)
 
-            if len(self._timestamps) >= self._max_calls:
-                sleep_for = self._period - (now - self._timestamps[0])
-                if sleep_for > 0:
-                    time.sleep(sleep_for)
+    def acquire(self) -> None:
+        while True:
+            with self._lock:
                 now = time.monotonic()
                 self._timestamps = [
-                    ts for ts in self._timestamps if now - ts < self._period
+                    timestamp
+                    for timestamp in self._timestamps
+                    if now - timestamp < self._period
                 ]
+                if len(self._timestamps) < self._max_calls:
+                    self._timestamps.append(now)
+                    return
+                sleep_for = self._period - (now - self._timestamps[0])
+            time.sleep(max(sleep_for, 0.0))
 
-            self._timestamps.append(time.monotonic())
+    def __enter__(self) -> SyncLimiter:
+        self.acquire()
         return self
 
     def __exit__(
@@ -37,5 +52,5 @@ class SyncLimiter:
         exc_type: t.Optional[t.Type[BaseException]],
         exc_value: t.Optional[BaseException],
         traceback: t.Optional[t.Any],
-    ) -> bool:
-        return False
+    ) -> None:
+        pass

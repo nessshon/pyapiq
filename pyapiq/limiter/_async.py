@@ -14,7 +14,7 @@ class AsyncLimiter:
         self._lock = asyncio.Lock()
         self._last_refill = time.monotonic()
 
-    async def _refill(self) -> None:
+    def _refill(self) -> None:
         now = time.monotonic()
         elapsed = now - self._last_refill
         if elapsed > 0:
@@ -23,10 +23,19 @@ class AsyncLimiter:
                 self._tokens = min(self._max_rate, self._tokens + int(refill))
                 self._last_refill = now
 
+    def when_ready(self) -> float:
+        now = time.monotonic()
+        elapsed = now - self._last_refill
+        rate = self._max_rate / self._time_period
+        tokens = float(self._tokens) + elapsed * rate
+        if tokens >= 1.0:
+            return 0.0
+        return (1.0 - tokens) / rate
+
     async def acquire(self) -> None:
         while True:
             async with self._lock:
-                await self._refill()
+                self._refill()
                 if self._tokens >= 1:
                     self._tokens -= 1
                     return
