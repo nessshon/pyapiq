@@ -5,7 +5,7 @@ with open("README.md", "r", encoding="utf-8") as fh:
 
 setuptools.setup(
     name="pyapiq",
-    version="0.2.0",
+    version="0.2.1",
     author="nessshon",
     description="PyAPIq is a modern Python toolkit for building both synchronous and asynchronous API clients with clean, minimal code and full type safety.",
     long_description=long_description,
@@ -21,7 +21,7 @@ setuptools.setup(
     install_requires=[
         "aiohttp>=3.7.0",
         "pydantic>=2.0,<3.0",
-        "requests~=2.30.0",
+        "requests>=2.30.0,<3.0",
     ],
     classifiers=[
         "Development Status :: 4 - Beta",
